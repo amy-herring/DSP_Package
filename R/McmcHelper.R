@@ -56,9 +56,8 @@ getGamInit <- function(hypGam, gamIsTrunBool) {
     if (!thisGamIsTrBool)
       return (thisHypGam$a / thisHypGam$b)
     
-    # else: prior dist is truncated and we have to integrate to obtain mean
-    
-    # The term inside the integral for calculating the mean
+    # else: prior dist is truncated and we have to integrate to obtain mean 
+    # 'expecFcn': The term inside the integral for calculating the mean
     expecFcn <- function(x) x * dgamma(x, shape=thisHypGam$a, rate=thisHypGam$b)
     integralTerm <- integrate(expecFcn, lower=thisHypGam$bndL, upper=thisHypGam$bndU)$value
     normalizeConst <- with(pgamma(bndU, shape=a, rate=b) - pgamma(bndL, shape=a, rate=b), 
@@ -66,7 +65,8 @@ getGamInit <- function(hypGam, gamIsTrunBool) {
     return (integralTerm / normalizeConst)
   }
   
-  gamInit <- sapply(1:length(hypGam), function(j) getPriorMean(hypGam[[j]], gamIsTrunBool[j]))
+  contMean <- sapply(1:length(hypGam), function(j) getPriorMean(hypGam[[j]], gamIsTrunBool[j]))
+  gamInit <- sapply(1:length(hypGam), function(j) with(p + (1 - p) * contMean[j], data=hypGam[[j]]))
   return (gamInit)
 }
 

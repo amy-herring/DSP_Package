@@ -1,7 +1,7 @@
 
 # Sample gamma_h from full conditional posterior ------------------------------
 
-sampGammaH <- function(W, uProdBetaNoH, xiDay, hypGamH, uIsOneBool, pregUIsOneBool, hIsTrunBool) {
+sampGam <- function(W, uProdBetaNoH, xiDay, hypGamH, uIsOneBool, pregUIsOneBool, hIsTrunBool) {
   list2env(hypGamH, envir=environment())
   
   aTilde <- a + sum(W[pregUIsOneBool])
@@ -24,9 +24,8 @@ sampGammaTr <- function(aTilde, bTilde, bndL, bndU, hIsTrunBool) {
   if (!hIsTrunBool)
     gamSampVal <- rgamma(n=1, shape=aTilde, rate=bTilde)
   else {
-    unifBndL <- pgamma(bndL, shape=aTilde, rate=bTilde)
-    unifBndU <- pgamma(bndU, shape=aTilde, rate=bTilde)
-    unifSampVal <- runif(n=1, min=unifBndL, max=unifBndU)
+    unifBnd <- pgamma(c(bndL, bndU), shape=aTilde, rate=bTilde)
+    unifSampVal <- runif(n=1, min=unifBnd[1], max=unifBnd[2])
     gamSampVal <- qgamma(unifSampVal, shape=aTilde, rate=bTilde)
   }
 

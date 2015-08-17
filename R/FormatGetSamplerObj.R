@@ -33,20 +33,21 @@ getSamplerObj <- function(modelObj, fwLen) {
   idPregIdx <- which( tapply(pregDayBool, INDEX=id[sexBool], FUN=function(x) TRUE %in% x) )
   
   # Convert binary cols of U to boolean
-  covIsBinVec <- apply(U, MARGIN=2, FUN=function(x) isTRUE(all.equal(names(table(x)), c("0","1"))))
-  uBool <- lapply(1:q, function(j) if (!covIsBinVec[j]) NULL else (U[, j] == 1))
+  gamIsBinBool <- apply(U, MARGIN=2, FUN=function(x) isTRUE(all.equal(names(table(x)), c("0","1"))))
+  uBool <- lapply(1:q, function(j) if (!gamIsBinBool[j]) NULL else (U[, j] == 1))
   pregUBool <- lapply(uBool, function(x) x[pregDayBool])
   
   # ----------------------------------------------------------------------------
   
   samplerObj <- list( U = U,
-                      pregDayBool = pregDayBool,
-                      pregCycIdx = pregCycIdx,
                       uBool = uBool,
                       pregUBool = pregUBool,
+                      pregDayBool = pregDayBool,
+                      pregCycIdx = pregCycIdx,
                       idIdx = idIdx,
                       idDayExpan = idDayExpan,
                       idPregIdx = idPregIdx,
+                      gamIsBinBool = gamIsBinBool,
                       n = n,
                       q = q,
                       subjId = unique(id[sexBool]),
