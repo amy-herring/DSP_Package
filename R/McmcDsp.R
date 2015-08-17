@@ -88,6 +88,7 @@
 dsp <- function(dspDat, nSamp=1e4, hypGam=NULL, tuningGam=NULL, hypPhi=NULL, tuningPhi=0.3, 
                 trackProg="percent", progQuants=seq(0.1, 1.0, 0.1), saveToFile=FALSE,
                 nBurn=0, nThin=1) {
+
   
   # TODO: check if valid input
   
@@ -101,13 +102,14 @@ dsp <- function(dspDat, nSamp=1e4, hypGam=NULL, tuningGam=NULL, hypPhi=NULL, tun
   thinIsOneBool <- identical(nThin, 1L)
   
   # Add a backslash to 'outPath' if necessary
-  outPath <- format_outPath(outPath)
+  #outPath <- format_outPath(outPath)
   
   # Objects for progress statistics
+  nKeep <- nSamp - nBurn
   printProgBool <- !identical(trackProg, "none")
   if (printProgBool) {
     # 'trackVals': sampler iterations at which we print the percentage of progress
-    trackVals <- sapply(progQuants, function(x) tail(which(1:nSamp <= x * nSamp), 1))
+    trackVals <- sapply(progQuants, function(x) tail(which(1:nKeep <= x * nKeep), 1))
     # Write first line of 'trackProg' == "percent" option
     if (identical(trackProg, "percent"))
       cat("Progress:  ")
@@ -140,16 +142,16 @@ dsp <- function(dspDat, nSamp=1e4, hypGam=NULL, tuningGam=NULL, hypPhi=NULL, tun
     write("phi", file=paste0(outPath, "PHI.csv"), sep=",", ncolumns=1)
   }
   else {
-    phiOut <- numeric(nSamp)
-    xiOut <- setNames(data.frame(matrix(nrow=nSamp, ncol=n)), subjId)
-    gamOut <- setNames(data.frame(matrix(nrow=nSamp, ncol=q)), varNames)
+    phiOut <- numeric(nKeep)
+    xiOut <- setNames(data.frame(matrix(nrow=nKeep, ncol=n)), subjId)
+    gamOut <- setNames(data.frame(matrix(nrow=nKeep, ncol=q)), varNames)
   }
 
     
   # Begin MCMC sampler ==========================================================
   
   # Subtract 'nBurn' from 's' to prevent work later checking for thinning
-  for (s in (1 - nBurn):(nSamp - nBurn)) {
+  for (s in (1 - nBurn):nKeep) {
     
     # Sample latent variable W
     W <- sampW(uProdBeta, xiDay, pregDayBool, pregCycIdx)
@@ -210,7 +212,8 @@ dsp <- function(dspDat, nSamp=1e4, hypGam=NULL, tuningGam=NULL, hypPhi=NULL, tun
     phiLogR <- getPhiLogR(xi=xi, phiCurr=phi, phiProp=phiProp, hypPhi=hypPhi)
     if (log(runif(1)) < phiLogR) {
       phi <- phiProp
-      metCtr$phiAccept <- metCtr$phiAccept + 1L
+      if (!burnPhaseBool)
+        metCtr$phiAccept <- metCtr$phiAccept + 1L
     }
     
     # Write samples to output
@@ -233,7 +236,7 @@ dsp <- function(dspDat, nSamp=1e4, hypGam=NULL, tuningGam=NULL, hypPhi=NULL, tun
     
     # Print progress / verbose info
     if (printProgBool && (s %in% trackVals))
-      printProg(trackProg, nBurn, nSamp, s, gamOut, varNames, gamIsBinBool, metCtr)
+      printProg(trackProg, nKeep, s, gamOut, varNames, gamIsBinBool, metCtr)
 
   } # End DSP sampler ----------------------------------------------------------
   
@@ -305,13 +308,13 @@ getUProdBeta <- function(uProdBetaNoH, UH, gamH) {
 
 # Print progress / verbose info ------------------------------------------------
 
-printProg <- function(trackProg, nBurn, nSamp, s, gamOut, varNames, gamIsBinBool, metCtr) {
+printProg <- function(trackProg, nKeep, s, gamOut, varNames, gamIsBinBool, metCtr) {
   format4 <- function(x) format(round(x, 4), nsmall=4)
   perc <- function(x) formatC(round(100 * x), width=3)
   contBool <- (FALSE %in% gamIsBinBool)
   
   if ( identical(trackProg, "percent") )
-    cat(round(100 * s / (nSamp - nBurn)), "%..  ", sep="")
+    cat(round(100 * s / nKeep), "%..  ", sep="")
   
   else {
     meanGam <- sapply(gamOut[1:s, ], mean)
@@ -320,7 +323,7 @@ printProg <- function(trackProg, nBurn, nSamp, s, gamOut, varNames, gamIsBinBool
       paste(rep(" ", x), collapse=""))
     headerSpace <- paste(rep(" ", 8 + max(nchar(varNames)), collapse=""))
     
-    cat("\nCompletion percentage: ", perc(s / (nSamp - nBurn)), "%\n", sep="")
+    cat("\nCompletion percentage: ", perc(s / nKeep), "%\n", sep="")
     cat("phi acceptance rate:   ", perc(metCtr$phiAccept / s), "%\n", sep="")
     cat("Exponentiated coefficient statistics:\n\n")
     cat(headerSpace, "  Mean      2.5%     97.5%", if (contBool) "    Accept", "\n", sep="")
