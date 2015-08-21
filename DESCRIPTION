@@ -1,4 +1,4 @@
-Package: dsp
+Package: dspr
 Type: Package
 Title: Immplementation of Dunson day-specific probabilities methodology
 Version: 0.0.0.900

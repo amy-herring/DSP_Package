@@ -180,13 +180,6 @@
 
 dspDat <- function(formula, baseline=NULL, cycle=NULL, daily, 
                    idName, cycName, sexName, fwName=NULL, fwLen) {
-  source("Format_Data/FormatCheckValidInput.R")
-  source("Format_Data/FormatHelperFcns.R")
-  source("Format_Data/FormatCleanDat.R")
-  source("Format_Data/FormatGetRedDat.R")
-  source("Format_Data/FormatGetModelObj.R")
-  source("Format_Data/FormatGetSamplerObj.R")
-  source("Format_Data/FormatGetDatInfo.R")
   
   # TODO: check valid input
   
@@ -220,9 +213,6 @@ dspDat <- function(formula, baseline=NULL, cycle=NULL, daily,
   
   # Construct dspDat object
   dspDat <- list( formula = formula,
-                  baseline = baseline,
-                  cycle = cycle,
-                  daily = daily,
                   cleanDat = cleanDat,
                   redDat = redDat,
                   modelObj = modelObj,

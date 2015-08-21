@@ -1,23 +1,24 @@
 
-#' MCMC sampler for day-specific probabilities model
+#' MCMC sampler for day-specific probabilities of conception methodology
 #' 
 #' \code{dsp} is an MCMC sampler for the methodology proposed by Dunson and 
-#' Stanford in \emph{Bayesian inferences on predictors of conception 
-#' probabilities} (2005).  The function either writes the samples to file or 
-#' returns them as data, as specified by the \code{saveToFile} flag.
+#' Stanford in \emph{Bayesian Inferences on Predictors of Conception 
+#' Probabilities} (2005).
 #' 
-#' @param dspDat An object of \code{\link[base]{class}} \code{\link{dspDat}}.
+#' @param dspDat An object of \code{class} \code{\link{dspDat}}.
 #'   
-#' @param nSamp The number of scans for which to perform the sampler.  
-#'   Includes possible burn-in samples (as specified by the \code{nBurn}
-#'   parameter), so that specifying e.g. \code{nSamp = 15000} and
-#'   \code{nBurn = 5000} results in 15,000 total sampler scans, of which
-#'   5,000 are designated as burn-in scans and 10,000 are recorded for
-#'   posterior inference.
+#' @param nSamp The number of post-burn-in scans for which to perform the 
+#'   sampler.
+#'   
+#' @param nBurn Number of sampler scans included in the burn-in phase.
+#'   
+#' @param nThin Value such that during the post-burn-in phase, only every 
+#'   \code{nThin}-th scan is recorded for use in posterior inference.  Default 
+#'   of \code{1} corresponds to every scan being retained.
 #'   
 #' @param hypGam Either \code{NULL} or a \code{list} containing hyperparameters 
 #'   to be specified for the exponentiated model regression coefficients.  None,
-#'   some, or all of the hyperparameters can be or need be specified.
+#'   some, or all of the hyperparameters can be/need be specified.
 #'   
 #'   Each exponentiated regression coefficient has a prior defined in terms of 5
 #'   hyperparameters. These hyperparameters are the (i) prior probability of the
@@ -48,35 +49,98 @@
 #'   with matching index.  The order of the objects in either level of 
 #'   \code{hypGam} does not matter.
 #'   
-#' @param tuningGam *******
+#' @param tuningGam Either \code{NULL} or a list containing one or more 
+#'   \code{numeric} objects each with the name of one of the model design matrix
+#'   variables; the values are used as tuning parameters for the Metropolis step
+#'   for regression coeffients corresponding to continuous predictor variables. 
+#'   Categorical variables do not have a Metropolis step and values provided for
+#'   them are ignored.  If \code{NULL}, then default values are provided for 
+#'   every regression coefficient (that corresponds to a continuous predictor 
+#'   variable).  If some but not all of the tuning parameters for regression 
+#'   coefficients corresponding to continuous predictor variables are provided, 
+#'   then default values are provided for the remaining. The default tuning 
+#'   value for any regression coefficient is \code{0.25}.
 #'   
-#' @param hypPhi Either (i) \code{NULL} or (ii) a \code{list} containing one or 
-#'   two \code{numeric} objects with names \code{c1} and/or \code{c2}.  These 
-#'   values correspond (respectively) to the shape and rate parameters of the 
-#'   prior (gamma) distribution for the variance parameter of the woman-specific
-#'   fecundability mulitpliers.
+#' @param hypPhi Either \code{NULL} or a \code{list} containing one or two 
+#'   \code{numeric} objects with names \code{c1} and/or \code{c2}.  If supplied,
+#'   then these values correspond (respectively) to the shape and rate 
+#'   parameters of the prior (gamma) distribution for the variance parameter of 
+#'   the woman-specific fecundability multipliers.  If \code{NULL}, then default
+#'   values are provided for both \code{c1} and \code{c2}, and if exactly one of
+#'   either \code{c1} or \code{c2} are provided, then a default value is 
+#'   provided for the other.  The default values for \code{c1} and \code{c2} are
+#'   \code{1} and \code{1}, respectively.
 #'   
-#' @param tuningPhi The value of the tuning parameter for the Metropolis step 
-#'   for the variance parameter of the woman-specific fecundability mulitpliers.
-#'   The proposal value for this variance parameter for the (s+1)-th scan in the
-#'   sampler algorithm, is given by sampling from (the absolute value of) a 
-#'   uniform distribution with lower/upper bound given by adding/subtracting the
-#'   tuning parameter to/from the s-th value of the parameter.
+#' @param tuningPhi Metropolis tuning parameter for the variance parameter of 
+#'   the woman-specific fecundability mulitpliers. The proposal value for this 
+#'   variance parameter is sampled from a uniform distribution with support as 
+#'   determined by the tuning parameter.
 #'   
-#' @param trackProg **********
+#' @param trackProg One of either \code{"none"}, \code{"percent"}, or 
+#'   \code{"verbose"}; partial matching is supported.
 #'   
-#' @param progQuants **********
+#' @param progQuants Vector with values in (0,1].  Ignored if \code{trackProg} 
+#'   is specified as \code{"none"}.  If \code{trackProg} is one of 
+#'   \code{"percent"} or \code{"verbose"} then the specified output is printed 
+#'   whenever the post-burn-in progress of the sampler reaches one of the 
+#'   quantiles specified by \code{progQuants}.
 #'   
-#' @param saveToFile **********
+#' @param saveToFile \code{logical} specifying whether the samples from the 
+#'   post-burn-in phase are to be either written to file or returned as 
+#'   \code{data.frame} objects.  Note that in either case output characterizing 
+#'   the model is returned by the sampler.
 #'   
-#' @param nBurn ***********
+#' @param outPath String specifying the local path into which output files 
+#'   containing the MCMC samples are to be placed.  Ignored if \code{saveToFile}
+#'   is \code{FALSE}.
 #'   
-#' @param nThin **********
 #'   
-#' @details ****
+#' @details Takes preprocessed fertility data in the form of a 
+#'   \code{\link{dspDat}} object and performs an MCMC sampling algorithm for the
+#'   Dunson and Stanford day-specific probabilities of conception methodology.
 #'   
-#' @return *****
+#'   Selection of the covariates to include in the model is performed when
+#'   creating the \code{dspDat} object.
 #'   
+#'   
+#' @return \code{dsp} returns a list containing the following objects
+#'   
+#'   \describe{ \item{\code{formula}}{Model \code{formula}, as passed to the 
+#'   \code{dsp} sampler through the input to the \code{dspDat} parameter.}
+#'   
+#'   \item{\code{hypGam}}{\code{list} containing a sub-hierarchy of 
+#'   \code{list}s, each containing the hyperparameter values used for the 
+#'   sampler for the regression coefficients.}
+#'   
+#'   \item{\code{tuningGam}}{********}
+#'   
+#'   \item{\code{hypPhi}}{Hyperparameters for the variance parameter of the 
+#'   woman-specific fecundability multipliers.}
+#'   
+#'   \item{\code{tuningPhi}}{Metropolis tuning parameter used for sampling the 
+#'   variance parameter of the woman-specific fecundability multipliers.}
+#'   
+#'   \item{\code{nSamp}}{Input to \code{nSamp} parameter.}
+#'   
+#'   \item{\code{nBurn}}{Input to \code{nBurn} parameter.}
+#'   
+#'   \item{\code{nThin}}{Input to \code{nThin} parameter.}
+#'   
+#'   \item{\code{outPath}}{Input to \code{outPath} parameter.}
+#'   
+#'   \item{\code{phi}}{If \code{saveToFile} specified as \code{FALSE}, then a 
+#'   vector containing the post-burn-in samples for the variance parameter of 
+#'   the woman-specific fecundability multipliers.}
+#'   
+#'   \item{\code{xi}}{If \code{saveToFile} specified as \code{FALSE}, then a 
+#'   \code{data.frame} containing the post-burn-in samples for the 
+#'   woman-specific fecundability multipliers.}
+#'   
+#'   \item{\code{gam}}{If \code{saveToFile} specified as \code{FALSE}, then a 
+#'   \code{data.frame} containing the post-burn-in samples for the regression 
+#'   coefficients.}
+#'   
+#'   }
 #'   
 #' @author David A. Pritchard and Sam Berchuck, 2015
 #'   
@@ -85,12 +149,15 @@
 #'   126-133.
 
 
-dsp <- function(dspDat, nSamp=1e4, hypGam=NULL, tuningGam=NULL, hypPhi=NULL, tuningPhi=0.3, 
-                trackProg="percent", progQuants=seq(0.1, 1.0, 0.1), saveToFile=FALSE,
-                nBurn=0, nThin=1) {
+dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL, 
+                hypPhi=NULL, tuningPhi=0.3, trackProg="percent", progQuants=seq(0.1, 1.0, 0.1), 
+                saveToFile=FALSE, outPath) {
 
-  
   # TODO: check if valid input
+  
+  # TODO: work out 'format_outPath' function
+  # TODO: verbose print doesn't work for 'saveToFile == TRUE'
+  # TODO: 'getHypGam' not yet written
   
   list2env(dspDat$samplerObj, envir=environment())
   rm(dspDat)
@@ -101,18 +168,28 @@ dsp <- function(dspDat, nSamp=1e4, hypGam=NULL, tuningGam=NULL, hypPhi=NULL, tun
   nThin <- as.integer(nThin)
   thinIsOneBool <- identical(nThin, 1L)
   
-  # Add a backslash to 'outPath' if necessary
-  #outPath <- format_outPath(outPath)
+  # Add a backslash to 'outPath' if necessary.  How does this work for Windows OS?
+  if ( !saveToFile )
+    outPath <- format_outPath(outPath)
   
   # Objects for progress statistics
-  nKeep <- nSamp - nBurn
   printProgBool <- !identical(trackProg, "none")
+  bbl <- 50  # short for "burn bar length"; choice of 50 is arbitrary
+  burnQuants <- seq(1 / bbl, 1, 1 / bbl)
   if (printProgBool) {
     # 'trackVals': sampler iterations at which we print the percentage of progress
-    trackVals <- sapply(progQuants, function(x) tail(which(1:nKeep <= x * nKeep), 1))
-    # Write first line of 'trackProg' == "percent" option
-    if (identical(trackProg, "percent"))
-      cat("Progress:  ")
+    trackVals <- list() 
+    trackVals$prog <- sapply(progQuants, function(x) tail(which(1:nSamp <= x * nSamp), 1))
+    trackVals$burn <- sapply(burnQuants, function(x) tail(which(1:nBurn <= x * nBurn), 1) - nBurn)
+    
+    if (burnPhaseBool) {
+      # Write first line of burn-in progress bar
+      cat("Burn-in progress:  |", pasteC(rep(" ", bbl)), "|", sep="")
+    }
+    else if (identical(trackProg, "percent")) {
+      # Write first line of 'trackProg' == "percent" option
+      cat("Sampler progress:  ")
+    }
   }
   
   # Combine default hyperparameters with custom user input hyperparameters
@@ -142,16 +219,16 @@ dsp <- function(dspDat, nSamp=1e4, hypGam=NULL, tuningGam=NULL, hypPhi=NULL, tun
     write("phi", file=paste0(outPath, "PHI.csv"), sep=",", ncolumns=1)
   }
   else {
-    phiOut <- numeric(nKeep)
-    xiOut <- setNames(data.frame(matrix(nrow=nKeep, ncol=n)), subjId)
-    gamOut <- setNames(data.frame(matrix(nrow=nKeep, ncol=q)), varNames)
+    phiOut <- numeric(nSamp)
+    xiOut <- setNames(data.frame(matrix(nrow=nSamp, ncol=n)), subjId)
+    gamOut <- setNames(data.frame(matrix(nrow=nSamp, ncol=q)), varNames)
   }
 
     
   # Begin MCMC sampler ==========================================================
   
   # Subtract 'nBurn' from 's' to prevent work later checking for thinning
-  for (s in (1 - nBurn):nKeep) {
+  for (s in (1 - nBurn):nSamp) {
     
     # Sample latent variable W
     W <- sampW(uProdBeta, xiDay, pregDayBool, pregCycIdx)
@@ -218,8 +295,14 @@ dsp <- function(dspDat, nSamp=1e4, hypGam=NULL, tuningGam=NULL, hypPhi=NULL, tun
     
     # Write samples to output
     if (burnPhaseBool) {
-      if (identical(s, 0L))
+      if (identical(s, 0L)) {
         burnPhaseBool <- FALSE
+        printBurn(which(s == trackVals$burn), bbl)
+        if (identical(trackProg, "percent")) 
+          cat("\nPost-burn-in progress:  ")
+        else if (identical(trackProg, "verbose"))
+          cat("\nEntering post-burn-in phase of sampler..\n")
+      }
     }
     else if (thinIsOneBool || identical(s %% nThin, 0L)) {
       if (saveToFile) {
@@ -235,8 +318,15 @@ dsp <- function(dspDat, nSamp=1e4, hypGam=NULL, tuningGam=NULL, hypPhi=NULL, tun
     }
     
     # Print progress / verbose info
-    if (printProgBool && (s %in% trackVals))
-      printProg(trackProg, nKeep, s, gamOut, varNames, gamIsBinBool, metCtr)
+    if (printProgBool) {
+      if (burnPhaseBool) {
+        if (s %in% trackVals$burn) {
+          printBurn(which(s == trackVals$burn), bbl)
+        }
+      }
+      else if (s %in% trackVals$prog)
+        printProg(trackProg, nSamp, s, gamOut, varNames, gamIsBinBool, metCtr)
+    }
 
   } # End DSP sampler ----------------------------------------------------------
   
@@ -261,6 +351,20 @@ dsp <- function(dspDat, nSamp=1e4, hypGam=NULL, tuningGam=NULL, hypPhi=NULL, tun
 
 
 
+# Print burn progress bar ------------------------------------------------------
+
+printBurn <- function(nStar, barLen) {
+  prevStar <- nStar - 1
+  
+  cat(pasteC(rep("\b", barLen - prevStar + 1)), "*", 
+      pasteC(rep(" ",  barLen - prevStar - 1)), "|", sep="")
+}
+
+
+
+
+# Calculate U %*% beta for theta_0 and theta_1 ---------------------------------
+
 getUProdTheta <- function(uProdBeta, UH, gamCoefH, thetaH) {
   if (identical(gamCoefH, 1))
     uProdTheta <- list( point = uProdBeta,
@@ -274,10 +378,18 @@ getUProdTheta <- function(uProdBeta, UH, gamCoefH, thetaH) {
 
 
 
+# Convenience function for collapsing a vector ---------------------------------
+pasteC <- function(x) {
+  paste(x, collapse="")
+}
+
+
+
+
 # Combine user input gam tuning vals with default ------------------------------
 
 getTuningGam <- function(q) {
-  rep(0.1, q)
+  rep(0.25, q)
 }
 
 
@@ -308,13 +420,13 @@ getUProdBeta <- function(uProdBetaNoH, UH, gamH) {
 
 # Print progress / verbose info ------------------------------------------------
 
-printProg <- function(trackProg, nKeep, s, gamOut, varNames, gamIsBinBool, metCtr) {
+printProg <- function(trackProg, nSamp, s, gamOut, varNames, gamIsBinBool, metCtr) {
   format4 <- function(x) format(round(x, 4), nsmall=4)
   perc <- function(x) formatC(round(100 * x), width=3)
   contBool <- (FALSE %in% gamIsBinBool)
   
   if ( identical(trackProg, "percent") )
-    cat(round(100 * s / nKeep), "%..  ", sep="")
+    cat(round(100 * s / nSamp), "%..  ", sep="")
   
   else {
     meanGam <- sapply(gamOut[1:s, ], mean)
@@ -323,11 +435,11 @@ printProg <- function(trackProg, nKeep, s, gamOut, varNames, gamIsBinBool, metCt
       paste(rep(" ", x), collapse=""))
     headerSpace <- paste(rep(" ", 8 + max(nchar(varNames)), collapse=""))
     
-    cat("\nCompletion percentage: ", perc(s / nKeep), "%\n", sep="")
+    cat("\nCompletion percentage: ", perc(s / nSamp), "%\n", sep="")
     cat("phi acceptance rate:   ", perc(metCtr$phiAccept / s), "%\n", sep="")
     cat("Exponentiated coefficient statistics:\n\n")
-    cat(headerSpace, "  Mean      2.5%     97.5%", if (contBool) "    Accept", "\n", sep="")
-    cat(headerSpace, "------    ------    ------", if (contBool) "    ------","\n", sep="")  
+    cat(headerSpace, "  Mean      2.5%     97.5%", if (contBool) "    Accept", "\n", 
+        headerSpace, "------    ------    ------", if (contBool) "    ------", "\n", sep="") 
     for (i in 1:length(varNames))
       cat("    ", varNames[i], spaceVec[i], format4(meanGam[i]), "    ", format4(quantGam[i, 1]),
           "    ", format4(quantGam[i, 2]), 
@@ -343,9 +455,5 @@ printProg <- function(trackProg, nKeep, s, gamOut, varNames, gamIsBinBool, metCt
 # Ensure proper format for 'outPath' -------------------------------------------
 
 format_outPath <- function(path) {
-  pathLen <- nchar(path)
-  if ( !identical(substr(path, pathLen, pathLen), "/") )
-    path <- paste0(path, "/")
-
-  return (path)
+  ifelse(identical(substr(path, nchar(path), nchar(path)), "/"), path,  paste0(path, "/"))
 }
