@@ -196,7 +196,7 @@ dspDat <- function(formula, baseline=NULL, cycle=NULL, daily,
   combDat <- getCombDat(formula, redDat, varNames, fwLen, cycList)
 
   # Create X, Y, and U (from the Dunson and Stanford paper)
-  modelObj <- getModelObj(formula, redDat, varNames, fwLen, cycList)
+  modelObj <- getModelObj(combDat, formula, varNames)
   
   # Create objects for use in MCMC sampler (see 'FormatGetSamplerObj.R' for more details)
   samplerObj <- getSamplerObj(modelObj, fwLen)

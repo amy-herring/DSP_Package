@@ -169,7 +169,7 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
   thinIsOneBool <- identical(nThin, 1L)
   
   # Add a backslash to 'outPath' if necessary.  How does this work for Windows OS?
-  if ( !saveToFile )
+  if (saveToFile)
     outPath <- format_outPath(outPath)
   
   # Objects for progress statistics
@@ -344,6 +344,8 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
     outObj$xi  <- xiOut
     outObj$gam <- gamOut
   }
+  else
+    outObj$outPath <- outPath
   
   return (outObj)
 }
