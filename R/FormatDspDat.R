@@ -134,15 +134,6 @@
 #'   \describe{ \item{formula}{The original \code{formula} parameter provided as
 #'   input to the function}
 #'   
-#'   \item{baseline}{The original \code{baseline} parameter provided as input to
-#'   the function}
-#'   
-#'   \item{cycle}{The original \code{cycle} parameter provided as input to the 
-#'   function}
-#'   
-#'   \item{daily}{The original \code{daily} parameter provided as input to the 
-#'   function}
-#'   
 #'   \item{cleanDat}{A list containing objects \code{bas}, \code{cyc}, and 
 #'   \code{day}, which are the datasets after removing missing and reducing the 
 #'   \code{daily} data to fertile window days as described in \emph{Data 
@@ -200,6 +191,9 @@ dspDat <- function(formula, baseline=NULL, cycle=NULL, daily,
   idVec <- getCommonId(cleanDat, idName)
   cycList <- getCommonCyc(cleanDat, varNames, idVec)
   redDat <- getRedDat(cleanDat, varNames, idVec, cycList)
+  
+  # Create combined dataset (i.e. expand baseline and cycle and combine w/ daily)
+  combDat <- getCombDat(formula, redDat, varNames, fwLen, cycList)
 
   # Create X, Y, and U (from the Dunson and Stanford paper)
   modelObj <- getModelObj(formula, redDat, varNames, fwLen, cycList)
@@ -215,6 +209,7 @@ dspDat <- function(formula, baseline=NULL, cycle=NULL, daily,
   dspDat <- list( formula = formula,
                   cleanDat = cleanDat,
                   redDat = redDat,
+                  combDat = combDat,
                   modelObj = modelObj,
                   samplerObj = samplerObj,
                   datInfo = datInfo )

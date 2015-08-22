@@ -2,17 +2,21 @@
 # Partition the model variables by dataset -------------------------------------
 
 getVarNames <- function(formula, baseline, cycle, daily, idName, cycName, sexName, fwName) {
-  explNames <- all.vars(formula)
-  varInSetBool <- function(set) explNames %in% names(set)
+  explanNames <- all.vars(formula)
+  pregName <- explanNames[1]
+  varInSetBool <- function(set) explanNames %in% names(set)
   
   varNames <- list( id = idName,
                     cyc = cycName,
-                    preg = explNames[1],
+                    preg = pregName,
                     sex = sexName,
                     fw = fwName,
-                    basIncl = c(idName, explNames[varInSetBool(baseline)]),
-                    cycIncl = c(idName, cycName, explNames[varInSetBool(cycle)]),
-                    dayIncl = c(idName, cycName, sexName, fwName, explNames[varInSetBool(daily)]) )
+                    basIncl = c(idName, explanNames[varInSetBool(baseline)]),
+                    cycIncl = c(idName, cycName, explanNames[varInSetBool(cycle)]),
+                    dayIncl = c(idName, cycName, sexName, fwName, explanNames[varInSetBool(daily)]),
+                    modelVars = list( bas = explanNames[varInSetBool(baseline)],
+                                      cyc = setdiff(explanNames[varInSetBool(cycle)], pregName),
+                                      day = setdiff(explanNames[varInSetBool(daily)], pregName) ) )
   return (varNames)
 }
 
