@@ -1,5 +1,8 @@
 
 # Combine user input gamma hyperpars with default ------------------------------
+#
+# keys <- unique(c(names(lst1), names(lst2)))
+# setNames(mapply(c, lst1[keys], lst2[keys]), keys)       # Update using this code
 
 getHypGam <- function(varNames, userHypGam) {
   parNames <- c("a","b","p","bndL","bndU")
@@ -26,9 +29,6 @@ getHypGam <- function(varNames, userHypGam) {
   
   return (hypGam)
 }
-
-# keys <- unique(c(names(lst1), names(lst2)))
-# setNames(mapply(c, lst1[keys], lst2[keys]), keys)       # Try adapting this code
 
 
 
@@ -70,5 +70,78 @@ getGamInit <- function(hypGam, gamIsTrunBool) {
   return (gamInit)
 }
 
+
+
+
+# Calculate U %*% beta for theta_0 and theta_1 ---------------------------------
+
+getUProdTheta <- function(uProdBeta, UH, gamCoefH, thetaH) {
+  if (identical(gamCoefH, 1))
+    uProdTheta <- list( point = uProdBeta,
+                        cont  = uProdBeta + drop(UH * log(thetaH)) )
+  else
+    uProdTheta <- list( point = uProdBeta - drop(UH * log(thetaH)),
+                        cont  = uProdBeta )
+  return (uProdTheta)
+}
+
+
+
+
+# Convenience function for collapsing a vector ---------------------------------
+pasteC <- function(x) {
+  paste(x, collapse="")
+}
+
+
+
+
+# Combine user input gam tuning vals with default ------------------------------
+
+getTuningGam <- function(q) {
+  rep(0.25, q)
+}
+
+
+
+
+# Sample proposal value for theta_h Metropolis step ----------------------------
+
+sampPropTheta <- function(thetaH, tuningH) {
+  abs( runif(1, thetaH - tuningH, thetaH + tuningH) )
+}
+
+
+
+
+# Calculate U[, -h] %*% beta ---------------------------------------------------
+
+getUProdBetaNoH <- function(uProdBeta, UH, gamH) {
+  if (identical(gamH, 1))
+    uProdBeta
+  else
+    uProdBeta - drop(UH * log(gamH))
+}
+
+
+
+
+# Calculate U %*% beta ---------------------------------------------------------
+
+getUProdBeta <- function(uProdBetaNoH, UH, gamH) {
+  if (identical(gamH, 1))
+    uProdBetaNoH
+  else
+    uProdBetaNoH + drop(UH * log(gamH))
+}
+
+
+
+
+# Ensure proper format for 'outPath' -------------------------------------------
+
+format_outPath <- function(path) {
+  ifelse(identical(substr(path, nchar(path), nchar(path)), "/"), path,  paste0(path, "/"))
+}
 
 

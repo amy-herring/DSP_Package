@@ -158,6 +158,8 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
   # TODO: work out 'format_outPath' function
   # TODO: verbose print doesn't work for 'saveToFile == TRUE'
   # TODO: 'getHypGam' not yet written
+  # TODO: add deviance to verbose print
+  # TODO: update 'getHypGam' using code suggested in comments
   
   list2env(dspDat$samplerObj, envir=environment())
   rm(dspDat)
@@ -248,7 +250,7 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
       
       # Continuous case requires sampling via Metropolis algorithm
       else {
-        # 'uProdTheta': list with uProdBeta for point mass / continuous value of theta
+        # 'uProdTheta': list with uProdBeta for point mass and continuous value of theta
         uProdTheta <- getUProdTheta(uProdBeta, drop(U[, h]), gamCoef[h], theta[h])
     
         # M is the state part of the mixture distribution
@@ -262,7 +264,7 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
         }
         # Corresponds to the continuous part of the mixture distribution
         else {
-          propTheta <- abs( runif(1, theta[h] - tuningGam[h], theta[h] + tuningGam[h]) )
+          propTheta <- sampPropTheta(theta[h], tuningGam[h])
           uProdTheta$prop <- uProdTheta$point + drop(U[, h] * log(propTheta))
           
           logR <- getGamLogR(Wfull, xiDay, uProdTheta, theta[h], propTheta, hypGam[[h]])
@@ -284,7 +286,7 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
     xi <- sampXi(W, uProdBeta, phi, idIdx, idPregIdx, pregCycIdx, n)
     xiDay <- xi[idDayExpan]
     
-    # Metroplois step for phi, the variance parameter for xi
+    # Metropolis step for phi, the variance parameter for xi
     phiProp <- sampPhiProp(phi, tuningPhi)
     phiLogR <- getPhiLogR(xi=xi, phiCurr=phi, phiProp=phiProp, hypPhi=hypPhi)
     if (log(runif(1)) < phiLogR) {
@@ -350,112 +352,3 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
   return (outObj)
 }
 
-
-
-
-# Print burn progress bar ------------------------------------------------------
-
-printBurn <- function(nStar, barLen) {
-  prevStar <- nStar - 1
-  
-  cat(pasteC(rep("\b", barLen - prevStar + 1)), "*", 
-      pasteC(rep(" ",  barLen - prevStar - 1)), "|", sep="")
-}
-
-
-
-
-# Calculate U %*% beta for theta_0 and theta_1 ---------------------------------
-
-getUProdTheta <- function(uProdBeta, UH, gamCoefH, thetaH) {
-  if (identical(gamCoefH, 1))
-    uProdTheta <- list( point = uProdBeta,
-                        cont  = uProdBeta + drop(UH * log(thetaH)) )
-  else
-    uProdTheta <- list( point = uProdBeta - drop(UH * log(thetaH)),
-                        cont  = uProdBeta )
-  return (uProdTheta)
-}
-
-
-
-
-# Convenience function for collapsing a vector ---------------------------------
-pasteC <- function(x) {
-  paste(x, collapse="")
-}
-
-
-
-
-# Combine user input gam tuning vals with default ------------------------------
-
-getTuningGam <- function(q) {
-  rep(0.25, q)
-}
-
-
-
-
-# Calculate U[, -h] %*% beta ---------------------------------------------------
-
-getUProdBetaNoH <- function(uProdBeta, UH, gamH) {
-  if (identical(gamH, 1))
-    uProdBeta
-  else
-    uProdBeta - drop(UH * log(gamH))
-}
-
-
-
-
-# Calculate U %*% beta ---------------------------------------------------------
-
-getUProdBeta <- function(uProdBetaNoH, UH, gamH) {
-  if (identical(gamH, 1))
-    uProdBetaNoH
-  else
-    uProdBetaNoH + drop(UH * log(gamH))
-}
-
-
-
-# Print progress / verbose info ------------------------------------------------
-
-printProg <- function(trackProg, nSamp, s, gamOut, varNames, gamIsBinBool, metCtr) {
-  format4 <- function(x) format(round(x, 4), nsmall=4)
-  perc <- function(x) formatC(round(100 * x), width=3)
-  contBool <- (FALSE %in% gamIsBinBool)
-  
-  if ( identical(trackProg, "percent") )
-    cat(round(100 * s / nSamp), "%..  ", sep="")
-  
-  else {
-    meanGam <- sapply(gamOut[1:s, ], mean)
-    quantGam <- t( apply(gamOut[1:s, ], MARGIN=2, FUN=quantile, probs=c(0.025, 0.975)) )
-    spaceVec <- sapply(max(nchar(varNames)) - nchar(varNames) + 4,  function(x) 
-      paste(rep(" ", x), collapse=""))
-    headerSpace <- paste(rep(" ", 8 + max(nchar(varNames)), collapse=""))
-    
-    cat("\nCompletion percentage: ", perc(s / nSamp), "%\n", sep="")
-    cat("phi acceptance rate:   ", perc(metCtr$phiAccept / s), "%\n", sep="")
-    cat("Exponentiated coefficient statistics:\n\n")
-    cat(headerSpace, "  Mean      2.5%     97.5%", if (contBool) "    Accept", "\n", 
-        headerSpace, "------    ------    ------", if (contBool) "    ------", "\n", sep="") 
-    for (i in 1:length(varNames))
-      cat("    ", varNames[i], spaceVec[i], format4(meanGam[i]), "    ", format4(quantGam[i, 1]),
-          "    ", format4(quantGam[i, 2]), 
-          if (!gamIsBinBool[i]) paste0("    ", perc(metCtr$gamAccept[i] / metCtr$gamTotal[i]), "%"),
-          "\n", sep="")
-    cat(paste(c(rep("-", length(headerSpace) + 26 + ifelse(contBool, 10, 0)), "\n"), collapse=""))
-  }
-}
-
-
-
-
-# Ensure proper format for 'outPath' -------------------------------------------
-
-format_outPath <- function(path) {
-  ifelse(identical(substr(path, nchar(path), nchar(path)), "/"), path,  paste0(path, "/"))
-}
