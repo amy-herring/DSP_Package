@@ -4,15 +4,15 @@
 # Remove non-fertile window days, cycles that have wrong number of days, and
 # observations / cycles that have missing data in the model variables.
 
-getCleanDat <- function(baseline, cycle, daily, varNames, fwLen) {
+getCleanDat <- function(baseline, cycle, daily, varNames, fwLen, useNA) {
   # 'NULL' value for 'fwInd' indicates that daily data has already been restricted to FW
   if (!is.null(varNames$fw))
     dayFw <- daily[convToBool(daily[[varNames$fw]]), ]
   else
     dayFw <- daily
-  
+
   # Rows with missing data (in the needed cols) for baseline, cycle, daily datasets
-  noMissBool <- getNoMissBool(baseline, cycle, dayFw, varNames)
+  noMissBool <- getNoMissBool(baseline, cycle, dayFw, varNames, useNA)
 
   # Finds in daily data FW cycles of the right length and w/o missing (in the needed cols)
   cycInDailyIdx <- getCycInDailyIdx(dayFw[[varNames$id]], dayFw[[varNames$cyc]])
@@ -46,18 +46,21 @@ getCycInDailyIdx <- function(idVec, cycVec) {
 
 # Boolean for missing in bas, cyc, day datasets --------------------------------
 
-getNoMissBool <- function(baseline, cycle, daily, varNames) {
+getNoMissBool <- function(baseline, cycle, daily, varNames, useNA) {
   
-  getBool <- function(dat, inclNames) {
+  getComplCase <- function(dat, inclNames) {
     if (is.null(dat)) 
       return (NULL)
+    else if (identical(useNA, "none"))
+      return ( complete.cases(dat[, inclNames]) )
+    # else: 'useNA == "sex"
     else
-      return ( apply(is.na(dat[, inclNames]), MARGIN=1, FUN=function(x) !(TRUE %in% x)) )
+      return ( complete.cases(dat[, setdiff(inclNames, varNames$sex)]) )
   }
   
-  noMissBool <- list( bas = getBool(baseline, varNames$basIncl),
-                      cyc = getBool(cycle, varNames$cycIncl),
-                      day = getBool(daily, varNames$dayIncl) )
+  noMissBool <- list( bas = getComplCase(baseline, varNames$basIncl),
+                      cyc = getComplCase(cycle, varNames$cycIncl),
+                      day = getComplCase(daily, varNames$dayIncl) )
   
   return (noMissBool)
 }

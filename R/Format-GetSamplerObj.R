@@ -8,6 +8,7 @@ getSamplerObj <- function(modelObj, fwLen) {
   pregDayBool <- rep(convToBool(Y), each=fwLen)
   sexBool <- convToBool(X)
   sexPregBool <- (sexBool & pregDayBool)
+  sexMissBool <- is.na(X)
   
   n <- length(unique(id[sexBool])) # number of individuals
   q <- ncol(U) # number of covariates
@@ -29,7 +30,8 @@ getSamplerObj <- function(modelObj, fwLen) {
   # Reduce objects to intercourse days
   U <- U[sexBool, ]
   pregDayBool <- pregDayBool[sexBool]
-  # Indexes the subjects who have a pregnancy; used for updating xi
+  sexMissBool <- sexMissBool[sexBool]
+  # 'idPregIdx': indexes the subjects who have a pregnancy; used for updating xi
   idPregIdx <- which( tapply(pregDayBool, INDEX=id[sexBool], FUN=function(x) TRUE %in% x) )
   
   # Convert binary cols of U to boolean
@@ -48,6 +50,7 @@ getSamplerObj <- function(modelObj, fwLen) {
                       idDayExpan = idDayExpan,
                       idPregIdx = idPregIdx,
                       gamIsBinBool = gamIsBinBool,
+                      sexMissBool = sexMissBool,
                       n = n,
                       q = q,
                       subjId = unique(id[sexBool]),

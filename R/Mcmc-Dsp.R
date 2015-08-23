@@ -99,7 +99,7 @@
 #'   \code{\link{dspDat}} object and performs an MCMC sampling algorithm for the
 #'   Dunson and Stanford day-specific probabilities of conception methodology.
 #'   
-#'   Selection of the covariates to include in the model is performed when
+#'   Selection of the covariates to include in the model is performed when 
 #'   creating the \code{dspDat} object.
 #'   
 #'   
@@ -126,7 +126,8 @@
 #'   
 #'   \item{\code{nThin}}{Input to \code{nThin} parameter.}
 #'   
-#'   \item{\code{outPath}}{Input to \code{outPath} parameter.}
+#'   \item{\code{outPath}}{If \code{saveToFile} specified as \code{TRUE}, then
+#'   the input to \code{outPath} parameter.}
 #'   
 #'   \item{\code{phi}}{If \code{saveToFile} specified as \code{FALSE}, then a 
 #'   vector containing the post-burn-in samples for the variance parameter of 
@@ -173,6 +174,10 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
   # Add a backslash to 'outPath' if necessary.  How does this work for Windows OS?
   if (saveToFile)
     outPath <- format_outPath(outPath)
+  
+  # Missing data objects
+  #if (identical(useNA, "sex") && (TRUE %in% sexMissBool)) 1
+    
   
   # Objects for progress statistics
   printProgBool <- !identical(trackProg, "none")

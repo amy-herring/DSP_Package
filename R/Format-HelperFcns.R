@@ -68,11 +68,16 @@ getCommonCyc <- function(cleanDat, varNames, idVec) {
 #
 # PRE: already checked that all values are logical or numeric or start with "y","Y","n", or "N"
 
-convToBool <- function(x) {
-  if (is.logical(x))
-    return (x)
-  else if (is.numeric(x))
-    return (as.logical(x))
-  else
-    sapply(substr(x, 1, 1), function(l) if ((l == "n") | (l == "N")) FALSE else TRUE)
+convToBool <- function(x, keepNA=TRUE) {
+  convChar <- function(c) {
+    if (is.na(c)) NA
+    else if (identical(c, "n") || identical(c, "N")) FALSE
+    else TRUE
+  }
+    
+  if (is.logical(x)) boolVec <- x
+  else if (is.numeric(x)) boolVec <- as.logical(x)
+  else boolVec <- sapply(substr(x, 1, 1), convChar)
+
+  return ( replace(boolVec, is.na(boolVec), ifelse(keepNA, TRUE, FALSE)) )
 }

@@ -131,31 +131,32 @@
 #'   \code{"dspDat"}. An object of class \code{"dspDat"} is a list containing 
 #'   the following components:
 #'   
-#'   \describe{ \item{formula}{The original \code{formula} parameter provided as
-#'   input to the function}
+#'   \describe{
 #'   
-#'   \item{cleanDat}{A list containing objects \code{bas}, \code{cyc}, and 
-#'   \code{day}, which are the datasets after removing missing and reducing the 
-#'   \code{daily} data to fertile window days as described in \emph{Data 
+#'   \item{\code{cleanDat}}{A list containing objects \code{bas}, \code{cyc},
+#'   and \code{day}, which are the datasets after removing missing and reducing
+#'   the \code{daily} data to fertile window days as described in \emph{Data 
 #'   Processing Steps}. If \code{NULL} was supplied for \code{baseline} or 
 #'   \code{cycle}, then the value of \code{bas} or \code{cyc} is also 
 #'   \code{NULL}. }
 #'   
-#'   \item{redDat}{A list containing objects \code{bas}, \code{cyc}, and 
+#'   \item{\code{redDat}}{A list containing objects \code{bas}, \code{cyc}, and 
 #'   \code{day}, which are the datasets after reducing the cleaned data to the 
 #'   set of IDs and cycles that are common to every non-\code{NULL} dataset.  If
 #'   \code{NULL} was supplied for \code{baseline} or \code{cycle}, then the 
 #'   value of \code{bas} or \code{cyc} is also \code{NULL}. }
 #'   
-#'   \item{modelObj}{A list containing objects \code{Y}, \code{X}, \code{U}, and
-#'   \code{id}. \code{Y}, \code{X}, \code{U} are as in the Dunson and Stanford 
-#'   paper, and \code{id} is a vector of subject IDs such that each observation 
-#'   specifies the subject ID for the corresponding observation. }
+#'   \item{\code{combDat}}{ ******* }
 #'   
-#'   \item{samplerObj}{A list containing objects for use by the 
+#'   \item{\code{modelObj}}{A list containing objects \code{Y}, \code{X},
+#'   \code{U}, and \code{id}. \code{Y}, \code{X}, \code{U} are as in the Dunson
+#'   and Stanford paper, and \code{id} is a vector of subject IDs such that each
+#'   observation specifies the subject ID for the corresponding observation. }
+#'   
+#'   \item{\code{samplerObj}}{A list containing objects for use by the 
 #'   \code{dsp} function when executing the MCMC algorithm}
 #'   
-#'   \item{datInfo}{A list containing objects for use by the 
+#'   \item{\code{datInfo}}{A list containing objects for use by the 
 #'   \code{\link{summary}} function} }
 #'   
 #' @author David A. Pritchard and Sam Berchuck, 2015
@@ -169,10 +170,13 @@
 
 # Mung data into format for use by mcmc sampler ================================
 
-dspDat <- function(formula, baseline=NULL, cycle=NULL, daily, 
-                   idName, cycName, sexName, fwName=NULL, fwLen) {
+dspDat <- function(formula, baseline=NULL, cycle=NULL, daily, idName, 
+                   cycName, sexName, fwName=NULL, fwLen, useNA="none") {
   
   # TODO: check valid input
+  # TODO: clean up summary fcn
+  # TODO: setNames and getNames for class?
+  # TODO: partial matching for 'useNA'
   
   # Partition the model variable names by dataset
   varNames <- getVarNames(formula, baseline, cycle, daily, idName, cycName, sexName, fwName)
@@ -185,7 +189,7 @@ dspDat <- function(formula, baseline=NULL, cycle=NULL, daily,
   # For daily data: remove non-FW days, cycles that have wrong number of FW days or include
   # missing in the cycle (in the model variables).  For baseline / cycle: remove observations 
   # that have missing data (in the model variables).
-  cleanDat <- getCleanDat(baseline, cycle, daily, varNames, fwLen)
+  cleanDat <- getCleanDat(baseline, cycle, daily, varNames, fwLen, useNA)
   
   # Reduce data to subjects and cycles that are common to all datasets
   idVec <- getCommonId(cleanDat, idName)
@@ -200,14 +204,14 @@ dspDat <- function(formula, baseline=NULL, cycle=NULL, daily,
   
   # Create objects for use in MCMC sampler (see 'FormatGetSamplerObj.R' for more details)
   samplerObj <- getSamplerObj(modelObj, fwLen)
+  samplerObj <- c(samplerObj, formula=formula, useNA=useNA)
   
   # Stats related to munging process for use by summary fcn
   datInfo <- getDatInfo(formula, baseline, cycle, daily, cleanDat, 
                         redDat, modelObj, varNames, fwLen, idVec, cycList)
   
   # Construct dspDat object
-  dspDat <- list( formula = formula,
-                  cleanDat = cleanDat,
+  dspDat <- list( cleanDat = cleanDat,
                   redDat = redDat,
                   combDat = combDat,
                   modelObj = modelObj,
