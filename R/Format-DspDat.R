@@ -1,16 +1,16 @@
 
 #' Specify model variables for day-specific probabilities MCMC sampler
 #' 
-#' \code{dspDat} is used to create an object of \code{\link[base]{class}} 
-#' \code{"dspDat"}; the resultant object may then be used as input to the 
-#' \code{dsp} function to sample an MCMC chain for the methodology proposed by 
-#' Dunson and Stanford in \emph{Bayesian Inferences on Predictors of Conception 
-#' Probabilities} (2005). The \code{dspDat} function is essentially a 
-#' convenience function provided to (if necessary) merge multiple datasets of 
-#' varying time-specificities, as is common for the type of fertility data for 
-#' which the aformentioned methodology is designed.  The 
-#' \code{\link[base]{class}} \code{"dspDat"} is equipped with a \code{summary} 
-#' function.
+#' \code{dspDat} is used to create an object of \code{class} \code{"dspDat"};
+#' the resultant object may then be used as input to the \code{dsp} function to
+#' sample an MCMC chain for the methodology proposed by Dunson and Stanford in
+#' \emph{Bayesian Inferences on Predictors of Conception Probabilities} (2005).
+#' The \code{dspDat} function is essentially a convenience function provided to
+#' (if necessary) merge multiple datasets of varying time-specificities, as is
+#' common for the type of fertility data for which the aformentioned methodology
+#' is designed.
+#' 
+#' The \code{class} \code{"dspDat"} is equipped with a \code{summary} function.
 #' 
 #' @param formula An object of class \code{\link[stats]{formula}} (or one that 
 #'   can be coerced to that class).  The term on the left-hand side of the 
@@ -133,8 +133,8 @@
 #'   
 #'   \describe{
 #'   
-#'   \item{\code{cleanDat}}{A list containing objects \code{bas}, \code{cyc},
-#'   and \code{day}, which are the datasets after removing missing and reducing
+#'   \item{\code{cleanDat}}{A list containing objects \code{bas}, \code{cyc}, 
+#'   and \code{day}, which are the datasets after removing missing and reducing 
 #'   the \code{daily} data to fertile window days as described in \emph{Data 
 #'   Processing Steps}. If \code{NULL} was supplied for \code{baseline} or 
 #'   \code{cycle}, then the value of \code{bas} or \code{cyc} is also 
@@ -148,8 +148,8 @@
 #'   
 #'   \item{\code{combDat}}{ ******* }
 #'   
-#'   \item{\code{modelObj}}{A list containing objects \code{Y}, \code{X},
-#'   \code{U}, and \code{id}. \code{Y}, \code{X}, \code{U} are as in the Dunson
+#'   \item{\code{modelObj}}{A list containing objects \code{Y}, \code{X}, 
+#'   \code{U}, and \code{id}. \code{Y}, \code{X}, \code{U} are as in the Dunson 
 #'   and Stanford paper, and \code{id} is a vector of subject IDs such that each
 #'   observation specifies the subject ID for the corresponding observation. }
 #'   

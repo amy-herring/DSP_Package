@@ -1,5 +1,71 @@
 
-# Create objects for use in the MCMC sampler -----------------------------------
+#' DSP input data structure creation
+#' 
+#' \code{getSamplerObj} creates..
+#' 
+#' 
+#' 
+#' @param modelObj stuff
+#'   
+#' @param cycVec stuff
+#'   
+#' @param fwLen stuff
+#'   
+#' @param useNA stuff
+#'   
+#' @details Add details about the software
+#'   
+#' @return \code{getSamplerObj} returns a \code{list} containing the following 
+#'   components:
+#'   
+#'   \describe{
+#'   
+#'   \item{\code{U}}{Design matrix of model covariates.  If any baseline- and / 
+#'   or cycle-specific covariates are included in the model, then they are 
+#'   expanded to a daily format.  Categorical variables, if any, are encoded in 
+#'   dummy-format coding.
+#'   
+#'   The rows of U are sorted first by subject id and then by cycle. Observation
+#'   days in which intercourse did not occur are removed.  **** More to come.. 
+#'   }
+#'   
+#'   \item{\code{idDayExpan}}{}
+#'   
+#'   \item{\code{gamBinBool}}{}
+#'   
+#'   \item{\code{varNames}}{}
+#'   
+#'   \item{\code{useNaSexBool}}{}
+#'   
+#'   \item{\code{subjId}}{}
+#'   
+#'   \item{\code{n}}{}
+#'   
+#'   \item{\code{nObs}}{}
+#'   
+#'   \item{\code{q}}{}
+#'   
+#'   \strong{idx}: if \code{useNA} is specified as \code{"none"}, then a 
+#'   \code{list} with name \code{idx} is included as an object
+#'   
+#'   \describe{
+#'   
+#'   \item{\code{preg}}{****}
+#'   
+#'   \item{\code{U}}{****}
+#'   
+#'   \item{\code{pregCyc}}{****}
+#'   
+#'   \item{\code{subj}}{****}
+#'   
+#'   }
+#'   
+#'   \strong{naSexDat}: if \code{useNA} is specified as \code{"none"},
+#'   then the following object is included as in element in the return
+#'   \code{list} object:
+#'   
+#'   }
+
 
 getSamplerObj <- function(modelObj, cycVec, fwLen, useNA) {
   # Contains 'Y', 'X', 'id', 'U'
@@ -53,28 +119,8 @@ getSamplerObj <- function(modelObj, cycVec, fwLen, useNA) {
   uIdx <- lapply(uBool, function(x) if (is.null(x)) NULL else which(x))
   pregUIdx <- lapply(pregUBool, function(x) if (is.null(x)) NULL else which(x))
   
-  # Missing data objects -------------------------------------------------------
+  # Construct idx or naSexDat object -------------------------------------------
 
-#   useNaSexBool <- FALSE
-#   if (identical(useNA, "sex")) {
-#     useNaSexBool <- TRUE
-#     # 'naSexDat': 
-#     naSexDat <- list( idIdx = idIdx,
-#                       pregCycIdx = cycIdx$preg,
-#                       #idDayExpan = idDayExpan,
-#                       uBool = uBool,
-#                       pregUBool = pregUBool,
-#                       pregDayBool = pregDayBool,
-#                       subjId = subjId )
-#     # Objects for use when sampling missing intercourse data
-#     naSexBool <- replace(logical(nObs), list=naSexIdx, values=TRUE)
-#     cycPermsIdx <- getCycPermsIdx(cycIdx$all, naSexBool)
-#     cycSexPriors <- getCycSexPriors(cycIdx$all, naSexBool, naSexPriors)
-#     sexPriorLik <- getSexPriorLik(cycSexPriors)
-#     #rm(naSexBool, cycPermsIdx)
-#   }
-  
-  
   if (!identical(useNA, "sex")) {
     useNaSexBool <- FALSE
     
@@ -84,7 +130,7 @@ getSamplerObj <- function(modelObj, cycVec, fwLen, useNA) {
                  pregCyc = pregCycIdx,
                  subj    = list( obs  = idIdx,
                                  preg = idPregIdx ) )
-  }
+  } # End indexing data structure creation
   else {
     useNaSexBool <- TRUE
     
@@ -103,38 +149,9 @@ getSamplerObj <- function(modelObj, cycVec, fwLen, useNA) {
                       pregIdx     = idPregIdx,
                       cycPermsIdx = cycPermsIdx,
                       sexPriorLik = sexPriorLik )
-  }
-  
-  
-  #cat(length(idIdx), length(naSexDat$idIdx))
-
-  
-  # Construct return object ----------------------------------------------------
-  
-#   samplerObj <- list( U = U,
-#                       uBool = uBool,
-#                       pregUBool = pregUBool,
-#                       pregDayBool = pregDayBool,
-#                       idIdx = idIdx,
-#                       idDayExpan = idDayExpan,
-#                       cycIdx = list( all = cycIdx,
-#                                      preg = pregCycIdx ),
-#                       pregCycBool = pregCycBool,
-#                       idPregIdx = idPregIdx,
-#                       gamIsBinBool = gamIsBinBool,
-#                       naSexIdx = naSexIdx,
-#                       naSexPriors = getNaSexProbs(naSexIdx),
-#                       n = n,
-#                       nObs = length(idDayExpan),
-#                       sexIdx = list(all=seq(1, length(idDayExpan))),
-#                       q = q,
-#                       subjId = unique(id[sexBool]),
-#                       varNames = colnames(U) )
-  
-#   idx <- list( cyc = list( all = cycIdx,
-#                            uPreg = pregUBool)
-                           
-               
+  } # End NA sex data structure creation
+ 
+  # Construct samplerObj data structure ----------------------------------------
   
   samplerObj <- list( U            = U,
                       idDayExpan   = idDayExpan,
@@ -145,17 +162,12 @@ getSamplerObj <- function(modelObj, cycVec, fwLen, useNA) {
                       n            = n,
                       nObs         = nObs,
                       q            = q )
-  
-  if (!useNaSexBool) {
-    samplerObj$idx <- idx
-  }
-  else {
-#     samplerObj$naSexDat <- naSexDat
-#     samplerObj$sexPriors <- sexPriors
-    samplerObj$naSexDat <- naSexDat
-  }
 
-  
+  if (!useNaSexBool) 
+    samplerObj$idx <- idx 
+  else 
+    samplerObj$naSexDat <- naSexDat
+
   return (samplerObj)
 }
 

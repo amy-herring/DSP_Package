@@ -235,20 +235,7 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
   for (s in (1 - nBurn):nSamp) {
     
     # Sample missing intercourse values and update data
-    if (useNaSexBool) {
-#       # 'cycFullIdx': indexes of observations with sex, partitioned by cycle
-#       cycFullIdx <- sampCycIdx(pregCycBool, uProdBeta, xiDay, cycPermsIdx, sexPriorLik)
-#       sexIdx <- unlist(cycFullIdx)
-#       sexBool <- list(all=replace(logical(nObs), list=sexIdx, values=TRUE))
-#       sexBool$preg <- (sexBool$all & naSexDat$pregDayBool)
-#       pregCycIdx <- getPregCycIdx(cycFullIdx, pregCycBool)
-#       idIdx <- lapply(naSexDat$idIdx, function(j) j[ sexBool$all[j] ])
-#       #subjIdIdx <- seq(1:n)[ sapply(idIdx, function(j) TRUE %in% sexBool$all[j]) ]
-#       uBool <- lapply(naSexDat$uBool, function(x) x & sexBool$all)
-#       pregUBool <- lapply(naSexDat$pregUBool, function(x) x & sexBool$all)
-#       #pregDayBool <- naSexDat$pregDayBool[sexBool$all]
-      idx <- sampIdx(uProdBeta, xiDay, naSexDat, nObs)
-    }
+    if (useNaSexBool) idx <- sampIdx(uProdBeta, xiDay, naSexDat, nObs)
     
     # Sample latent variable W
     W <- sampW(uProdBeta, xiDay, idx$preg, idx$pregCyc)

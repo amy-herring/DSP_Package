@@ -1,4 +1,4 @@
-Package: dspr
+Package: dspBayes
 Type: Package
 Title: Immplementation of Dunson day-specific probabilities methodology
 Version: 0.0.0.900
