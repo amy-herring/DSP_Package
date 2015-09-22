@@ -47,6 +47,15 @@ getHypPhi <- function(userHypPhi) {
 
 
 
+# Sample Boolean with probability 'prob' for TRUE ------------------------------
+
+sampBool <- function(prob) {
+  sample(c(TRUE, FALSE), size=1, prob=c(prob, 1 - prob))
+}
+
+
+
+
 # Initial values for gamma set to mean of priors -------------------------------
 
 getGamInit <- function(hypGam, gamIsTrunBool) {
@@ -99,7 +108,7 @@ pasteC <- function(x) {
 # Combine user input gam tuning vals with default ------------------------------
 
 getTuningGam <- function(q) {
-  rep(0.25, q)
+  rep(0.5, q)
 }
 
 

@@ -5,7 +5,7 @@
 \title{Specify model variables for day-specific probabilities MCMC sampler}
 \usage{
 dspDat(formula, baseline = NULL, cycle = NULL, daily, idName, cycName,
-  sexName, fwName = NULL, fwLen)
+  sexName, fwName = NULL, fwLen, useNA = "none")
 }
 \arguments{
 \item{formula}{An object of class \code{\link[stats]{formula}} (or one that
@@ -94,12 +94,11 @@ dspDat(formula, baseline = NULL, cycle = NULL, daily, idName, cycName,
   \code{"dspDat"}. An object of class \code{"dspDat"} is a list containing
   the following components:
 
-  \describe{ \item{\code{formula}}{The original \code{formula} parameter provided as
-  input to the function}
+  \describe{
 
-  \item{\code{cleanDat}}{A list containing objects \code{bas}, \code{cyc}, and
-  \code{day}, which are the datasets after removing missing and reducing the
-  \code{daily} data to fertile window days as described in \emph{Data
+  \item{\code{cleanDat}}{A list containing objects \code{bas}, \code{cyc},
+  and \code{day}, which are the datasets after removing missing and reducing
+  the \code{daily} data to fertile window days as described in \emph{Data
   Processing Steps}. If \code{NULL} was supplied for \code{baseline} or
   \code{cycle}, then the value of \code{bas} or \code{cyc} is also
   \code{NULL}. }
@@ -112,10 +111,10 @@ dspDat(formula, baseline = NULL, cycle = NULL, daily, idName, cycName,
 
   \item{\code{combDat}}{ ******* }
 
-  \item{\code{modelObj}}{A list containing objects \code{Y}, \code{X}, \code{U}, and
-  \code{id}. \code{Y}, \code{X}, \code{U} are as in the Dunson and Stanford
-  paper, and \code{id} is a vector of subject IDs such that each observation
-  specifies the subject ID for the corresponding observation. }
+  \item{\code{modelObj}}{A list containing objects \code{Y}, \code{X},
+  \code{U}, and \code{id}. \code{Y}, \code{X}, \code{U} are as in the Dunson
+  and Stanford paper, and \code{id} is a vector of subject IDs such that each
+  observation specifies the subject ID for the corresponding observation. }
 
   \item{\code{samplerObj}}{A list containing objects for use by the
   \code{dsp} function when executing the MCMC algorithm}

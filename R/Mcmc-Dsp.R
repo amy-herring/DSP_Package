@@ -152,13 +152,13 @@
 
 dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL, 
                 hypPhi=NULL, tuningPhi=0.3, trackProg="percent", progQuants=seq(0.1, 1.0, 0.1), 
-                saveToFile=FALSE, outPath) {
+                saveToFile=FALSE, outPath=NULL) {
 
   # TODO: check if valid input
-  
-  # TODO: work out 'format_outPath' function
-  # TODO: verbose print doesn't work for 'saveToFile == TRUE'
-  # TODO: 'getHypGam' not yet written
+  # TODO: does it work if formula entered directly into fcn?  I think yes..
+  # TODO: work out details for 'format_outPath' function
+  # TODO: verbose print not yet written for 'saveToFile == TRUE' case
+  # TODO: 'getHypGam' not yet written (properly)
   # TODO: add deviance to verbose print
   # TODO: update 'getHypGam' using code suggested in comments
   
@@ -175,13 +175,10 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
   if (saveToFile)
     outPath <- format_outPath(outPath)
   
-  # Missing data objects
-  #if (identical(useNA, "sex") && (TRUE %in% sexMissBool)) 1
-    
-  
   # Objects for progress statistics
   printProgBool <- !identical(trackProg, "none")
-  bbl <- 50  # short for "burn bar length"; choice of 50 is arbitrary
+  # 'bbl': short for "burn bar length" (in chars); choice of 50 is arbitrary
+  bbl <- 50  
   burnQuants <- seq(1 / bbl, 1, 1 / bbl)
   if (printProgBool) {
     # 'trackVals': sampler iterations at which we print the percentage of progress
@@ -194,7 +191,7 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
       cat("Burn-in progress:  |", pasteC(rep(" ", bbl)), "|", sep="")
     }
     else if (identical(trackProg, "percent")) {
-      # Write first line of 'trackProg' == "percent" option
+      # Write first line of 'trackProg="percent"' option
       cat("Sampler progress:  ")
     }
   }
@@ -207,10 +204,10 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
     with(!isTRUE(all.equal(c(bndL, bndU), c(0, Inf))), data=hypGam[[j]]))
   
   # Set initial values:  uses mean of prior dists for phi and gamma
-  Wfull <- integer(nrow(U))
+  Wfull <- integer(nObs)
   phi <- hypPhi$c1 / hypPhi$c2
   gamCoef <- theta <- getGamInit(hypGam, gamIsTrunBool)
-  uProdBeta <- drop( U %*% log(gamCoef) )
+  uProdBeta <- drop(U %*% log(gamCoef))
   xi <- rep(1, n)
   xiDay <- xi[idDayExpan]
   
@@ -219,7 +216,7 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
                   gamAccept = integer(q),
                   gamTotal  = integer(q) )
   
-  # Inititalize MCMC output files / objects --------------------------------------
+  # Inititalize MCMC output files / objects
   if (saveToFile) {
     write(varNames, file=paste0(outPath, "GAMMA.csv"), sep=",", ncolumns=q)
     write(subjId, file=paste0(outPath, "XI.csv"), sep=",", ncolumns=n)
@@ -237,19 +234,35 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
   # Subtract 'nBurn' from 's' to prevent work later checking for thinning
   for (s in (1 - nBurn):nSamp) {
     
+    # Sample missing intercourse values and update data
+    if (useNaSexBool) {
+#       # 'cycFullIdx': indexes of observations with sex, partitioned by cycle
+#       cycFullIdx <- sampCycIdx(pregCycBool, uProdBeta, xiDay, cycPermsIdx, sexPriorLik)
+#       sexIdx <- unlist(cycFullIdx)
+#       sexBool <- list(all=replace(logical(nObs), list=sexIdx, values=TRUE))
+#       sexBool$preg <- (sexBool$all & naSexDat$pregDayBool)
+#       pregCycIdx <- getPregCycIdx(cycFullIdx, pregCycBool)
+#       idIdx <- lapply(naSexDat$idIdx, function(j) j[ sexBool$all[j] ])
+#       #subjIdIdx <- seq(1:n)[ sapply(idIdx, function(j) TRUE %in% sexBool$all[j]) ]
+#       uBool <- lapply(naSexDat$uBool, function(x) x & sexBool$all)
+#       pregUBool <- lapply(naSexDat$pregUBool, function(x) x & sexBool$all)
+#       #pregDayBool <- naSexDat$pregDayBool[sexBool$all]
+      idx <- sampIdx(uProdBeta, xiDay, naSexDat, nObs)
+    }
+    
     # Sample latent variable W
-    W <- sampW(uProdBeta, xiDay, pregDayBool, pregCycIdx)
-    # 'Wfull': W's for every sex day, even those that are always 0
-    Wfull[pregDayBool] <- W
+    W <- sampW(uProdBeta, xiDay, idx$preg, idx$pregCyc)
+    # 'Wfull': W's for every sex day, even those that are always 0 (i.e. cyc's w/o pregnancy)
+    Wfull <- replace(integer(nObs), idx$preg, W)
     
     # Sample regression coefficients gamma
     for (h in 1:q) {
       
       # Binary case has closed-form full conditional
-      if (gamIsBinBool[h]) {
+      if (gamBinBool[h]) {
         uProdBetaNoH <- getUProdBetaNoH(uProdBeta, drop(U[, h]), gamCoef[h])
-        gamCoef[h] <- sampGam(W, uProdBetaNoH, xiDay, 
-                              hypGam[[h]], uBool[[h]], pregUBool[[h]], TRUE)
+        gamCoef[h] <- sampGam(Wfull, uProdBetaNoH, xiDay, 
+                              hypGam[[h]], idx$U$all[[h]], idx$U$preg[[h]], gamIsTrunBool[h])
         uProdBeta <- getUProdBeta(uProdBetaNoH, drop(U[, h]), gamCoef[h])
       }
       
@@ -288,12 +301,12 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
     } # End gamma update
     
     # Sample woman-specific fecundability multiplier xi
-    xi <- sampXi(W, uProdBeta, phi, idIdx, idPregIdx, pregCycIdx, n)
+    xi <- sampXi(W, uProdBeta, phi, idx$subj$obs, idx$subj$preg, idx$pregCyc, n)
     xiDay <- xi[idDayExpan]
     
     # Metropolis step for phi, the variance parameter for xi
     phiProp <- sampPhiProp(phi, tuningPhi)
-    phiLogR <- getPhiLogR(xi=xi, phiCurr=phi, phiProp=phiProp, hypPhi=hypPhi)
+    phiLogR <- getPhiLogR(xi, phi, phiProp, hypPhi)
     if (log(runif(1)) < phiLogR) {
       phi <- phiProp
       if (!burnPhaseBool)
@@ -304,11 +317,13 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
     if (burnPhaseBool) {
       if (identical(s, 0L)) {
         burnPhaseBool <- FALSE
+        if (printProgBool) {
         printBurn(which(s == trackVals$burn), bbl)
-        if (identical(trackProg, "percent")) 
-          cat("\nPost-burn-in progress:  ")
-        else if (identical(trackProg, "verbose"))
-          cat("\nEntering post-burn-in phase of sampler..\n")
+          if (identical(trackProg, "percent")) 
+            cat("\nPost-burn-in progress:  ")
+          else if (identical(trackProg, "verbose"))
+            cat("\nEntering post-burn-in phase of sampler..\n")
+        }
       }
     }
     else if (thinIsOneBool || identical(s %% nThin, 0L)) {
@@ -332,12 +347,12 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
         }
       }
       else if (s %in% trackVals$prog)
-        printProg(trackProg, nSamp, s, gamOut, varNames, gamIsBinBool, metCtr)
+        printProg(trackProg, nSamp, s, gamOut, varNames, gamBinBool, metCtr)
     }
 
   } # End DSP sampler ----------------------------------------------------------
   
-  # Construct and return sampler output ----------------------------------------  
+  # Construct and return sampler output
   outObj <- list( formula = formula,
                   hypGam = hypGam, 
                   tuningGam = tuningGam, 
@@ -356,4 +371,8 @@ dsp <- function(dspDat, nSamp=1e4, nBurn=0, nThin=1, hypGam=NULL, tuningGam=NULL
   
   return (outObj)
 }
+
+
+
+
 

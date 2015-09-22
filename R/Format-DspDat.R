@@ -203,7 +203,7 @@ dspDat <- function(formula, baseline=NULL, cycle=NULL, daily, idName,
   modelObj <- getModelObj(combDat, formula, varNames, fwLen)
   
   # Create objects for use in MCMC sampler (see 'FormatGetSamplerObj.R' for more details)
-  samplerObj <- getSamplerObj(modelObj, fwLen)
+  samplerObj <- getSamplerObj(modelObj, redDat$day[[cycName]], fwLen, useNA)
   samplerObj <- c(samplerObj, formula=formula, useNA=useNA)
   
   # Stats related to munging process for use by summary fcn

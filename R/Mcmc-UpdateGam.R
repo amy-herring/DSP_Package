@@ -1,10 +1,10 @@
 
 # Sample gamma_h from full conditional posterior ------------------------------
 
-sampGam <- function(W, uProdBetaNoH, xiDay, hypGamH, uIsOneBool, pregUIsOneBool, hIsTrunBool) {
+sampGam <- function(Wfull, uProdBetaNoH, xiDay, hypGamH, uIsOneBool, pregUIsOneBool, hIsTrunBool) {
   list2env(hypGamH, envir=environment())
   
-  aTilde <- a + sum(W[pregUIsOneBool])
+  aTilde <- a + sum(Wfull[pregUIsOneBool])
   bTilde <- getbTilde(uProdBetaNoH, xiDay, b, uIsOneBool)
   pTilde <- getpTilde(p, a, b, bndL, bndU, aTilde, bTilde)
   
@@ -96,11 +96,3 @@ getLogTrGamNorm <- function(a, b, bndL, bndU) {
   log( pgamma(q=bndU, shape=a, rate=b) - pgamma(q=bndL, shape=a, rate=b) )
 }
 
-
-
-
-# Sample Boolean with probability 'prob' for TRUE ------------------------------
-
-sampBool <- function(prob) {
-  sample(c(TRUE, FALSE), size=1, prob=c(prob, 1 - prob))
-}

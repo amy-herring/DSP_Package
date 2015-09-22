@@ -7,7 +7,7 @@
 dsp(dspDat, nSamp = 10000, nBurn = 0, nThin = 1, hypGam = NULL,
   tuningGam = NULL, hypPhi = NULL, tuningPhi = 0.3,
   trackProg = "percent", progQuants = seq(0.1, 1, 0.1),
-  saveToFile = FALSE, outPath)
+  saveToFile = FALSE, outPath = NULL, trueSexIdx)
 }
 \arguments{
 \item{dspDat}{An object of \code{class} \code{\link{dspDat}}.}
