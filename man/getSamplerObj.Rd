@@ -7,13 +7,19 @@
 getSamplerObj(modelObj, cycVec, fwLen, useNA)
 }
 \arguments{
-\item{modelObj}{stuff}
+\item{modelObj}{The return object from \code{\link{getModelObj}}.}
 
-\item{cycVec}{stuff}
+\item{cycVec}{The return object from \code{\link{getCommonCyc}}.}
 
-\item{fwLen}{stuff}
+\item{fwLen}{A value specifying the number of days belonging to a cycle's
+  fertile window.  The length of the fertile window is assumed to be same
+  across all cycles.}
 
-\item{useNA}{stuff}
+\item{useNA}{One of either \code{"none"} or \code{"sex"}.  If \code{"none"}
+  then observations with missing data are removed from the model.  If
+  \code{"sex"} then observations with missing intercourse data are included
+  in the model conditional on no other data missing in the observation.  See
+  \emph{Data Processing Steps} for more details.}
 }
 \value{
 \code{getSamplerObj} returns a \code{list} containing the following
@@ -21,54 +27,97 @@ getSamplerObj(modelObj, cycVec, fwLen, useNA)
 
   \describe{
 
-  \item{\code{U}}{Design matrix of model covariates.  If any baseline- and /
-  or cycle-specific covariates are included in the model, then they are
-  expanded to a daily format.  Categorical variables, if any, are encoded in
-  dummy-format coding.
+  \item{\code{U}}{Design matrix of model covariates, after removing
+  observations for which intercourse did not occur (and for missing values
+  when \code{useNA} is specified as \code{"none"}).  See
+  \code{\link{getModelObj}} for details regarding construction of \code{U}
+  (before non-intercourse observations are removed). }
 
-  The rows of U are sorted first by subject id and then by cycle. Observation
-  days in which intercourse did not occur are removed.  **** More to come..
-  }
+  \item{\code{idDayExpan}}{An \code{nObs}-\code{integer} vector that is used
+  to expand an \code{n}-vector to an \code{nObs}-vector. In more detail, it
+  is a vector of the form (1,1,1,2,2,2,2,...,n,n), where the number of 1's
+  corresponds to the number of study observations for which intercourse
+  occured for the first subject, the number of 2's corresponds to the number
+  of study observations for which intercourse occured for the second subject,
+  etc. }
 
-  \item{\code{idDayExpan}}{}
+  \item{\code{gamBinBool}}{A \code{q}-\code{logical} vector such that the
+  \code{p}-th element states the logical status of whether the \code{q}-th
+  predictor variable in the design matrix assumes values of only either 0 or
+  1. }
 
-  \item{\code{gamBinBool}}{}
+  \item{\code{varNames}}{A \code{q}-\code{character} vector such that the
+  \code{p}-th element provides the name of the \code{q}-th predictor variable
+  in the design matrix. }
 
-  \item{\code{varNames}}{}
+  \item{\code{useNaSexBool}}{A \code{logical} value supplying the logical
+  status of whether \code{useNA} has value \code{"sex"}. }
 
-  \item{\code{useNaSexBool}}{}
+  \item{\code{subjId}}{An \code{n}-vector of type determined at runtime
+  supplying the subject IDs. }
 
-  \item{\code{subjId}}{}
+  \item{\code{n}}{An \code{integer} value supplying the number of subjects in
+  the study (after removing subjects without any days of intercourse in the
+  fertile window). }
 
-  \item{\code{n}}{}
+  \item{\code{nObs}}{An \code{integer} value supplying the number of
+  fertile-window study days during which intercourse occured. }
 
-  \item{\code{nObs}}{}
-
-  \item{\code{q}}{}
+  \item{\code{q}}{An \code{integer} value supplying the number of predictor
+  variables in the design matrix. }
 
   \strong{idx}: if \code{useNA} is specified as \code{"none"}, then a
-  \code{list} with name \code{idx} is included as an object
+  \code{list} with name \code{idx} is included as an element in the
+  \code{getSamplerObj} return object; if \code{useNA} is specified as
+  \code{"sex"}, then \code{idx} is not included in the \code{getSamplerObj}
+  return object, and instead has to be created each scan through the sampler.
 
   \describe{
 
-  \item{\code{preg}}{****}
+  \item{\code{preg}}{An \code{integer} vector supplying the observation
+  indices (after removing non-intercourse days) such that the observation day
+  was a day within a cycle for which a successful pregnancy occured. }
 
-  \item{\code{U}}{****}
+  \item{\code{U}}{A \code{list} containing elements \code{all} and
+  \code{preg}.
 
-  \item{\code{pregCyc}}{****}
+  \code{all} is a \code{list} containing with \code{q} elements.  Each
+  element is such that the \code{p}-th element is either \code{NULL} if the
+  \code{p}-th predictor variable takes on values not just 0 or 1, or
+  otherwise is an \code{integer} vector supplying the observation indices
+  (after removing non-intercourse days) such that the \code{p}-th predictor
+  variable for that observation has a value of 1.
 
-  \item{\code{subj}}{****}
+  \code{preg} is constructed in the same way as \code{all}, with the
+  exception that the indices are further restricted to belong to observations
+  such that the observation day was a day within a cycle for which a
+  successful pregnancy occured. }
+
+  \item{\code{pregCyc}}{A \code{list} that partitions the observations
+  (indices) by cycle, restricted to observations such that the observation
+  day was a day within a cycle for which a successful pregnancy occured.  In
+  more detail, the process is conceptually equivalent to (i) subsetting the
+  data to observations such that the observation day was a day within a cycle
+  for which a successful pregnancy occured, and (ii) partitioning this
+  subsetted data into vectors of indices such that each vector contains the
+  observation indices belonging to a single cycle.   }
+
+  \item{\code{subj}}{An \code{integer} vector such that the elements are
+  values corresponding to the indices of subjects that became pregnant during
+  the study. }
 
   }
 
-  \strong{naSexDat}: if \code{useNA} is specified as \code{"none"},
-  then the following object is included as in element in the return
-  \code{list} object:
+  \strong{naSexDat}: if \code{useNA} is specified as \code{"none"}, then the
+  following object is included as in element in the return \code{list}
+  object:
 
   }
 }
 \description{
-\code{getSamplerObj} creates..
+\code{getSamplerObj} creates data structures used by the DSP sampler
+algorithm.  In fact, the only data created by \code{dspDat} that is used by
+the sampler is the data returned by this function.
 }
 \details{
 Add details about the software

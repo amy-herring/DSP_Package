@@ -1,12 +1,12 @@
 
 #' Specify model variables for day-specific probabilities MCMC sampler
 #' 
-#' \code{dspDat} is used to create an object of \code{class} \code{"dspDat"};
-#' the resultant object may then be used as input to the \code{dsp} function to
-#' sample an MCMC chain for the methodology proposed by Dunson and Stanford in
-#' \emph{Bayesian Inferences on Predictors of Conception Probabilities} (2005).
-#' The \code{dspDat} function is essentially a convenience function provided to
-#' (if necessary) merge multiple datasets of varying time-specificities, as is
+#' \code{dspDat} is used to create an object of \code{class} \code{"dspDat"}; 
+#' the resultant object may then be used as input to the \code{dsp} function to 
+#' sample an MCMC chain for the methodology proposed by Dunson and Stanford in 
+#' \emph{Bayesian Inferences on Predictors of Conception Probabilities} (2005). 
+#' The \code{dspDat} function is essentially a convenience function provided to 
+#' (if necessary) merge multiple datasets of varying time-specificities, as is 
 #' common for the type of fertility data for which the aformentioned methodology
 #' is designed.
 #' 
@@ -93,6 +93,12 @@
 #'   fertile window.  The length of the fertile window is assumed to be same 
 #'   across all cycles.
 #'   
+#' @param useNA One of either \code{"none"} or \code{"sex"}.  If \code{"none"}
+#'   then observations with missing data are removed from the model.  If
+#'   \code{"sex"} then observations with missing intercourse data are included
+#'   in the model conditional on no other data missing in the observation.  See
+#'   \emph{Data Processing Steps} for more details.
+#'   
 #' @details It is natural to record fertility study data in up to three datasets
 #'   of varying time-specificities.  First, a dataset of variables that do not 
 #'   change throughout the study which we denote as the \code{baseline} data, 
@@ -116,16 +122,6 @@
 #'   formula has an implied intercept term which may not be desireable for these
 #'   types of models.  To remove this use either \code{y ~ x - 1} or \code{y ~ 0
 #'   + x}.
-#'   
-#' @section Data processing steps: \describe{ \item{Cleaning data}{If either a 
-#'   \code{baseline} or \code{cycle} dataset is provided, then all observations 
-#'   that contain missing data among the model variables are removed.  All 
-#'   non-fertile window days are removed from the \code{daily} dataset, and any 
-#'   cycles that either contain missing in the fertile window or have too many 
-#'   or too few fertile window days are also removed.}
-#'   
-#'   \item{Reducing data}{Each non-\code{NULL} dataset is reduced to the set of 
-#'   IDs and cycles that are common to every non-\code{NULL} dataset.} }
 #'   
 #' @return \code{dspDat} returns an object of \code{\link[base]{class}} 
 #'   \code{"dspDat"}. An object of class \code{"dspDat"} is a list containing 
@@ -158,6 +154,16 @@
 #'   
 #'   \item{\code{datInfo}}{A list containing objects for use by the 
 #'   \code{\link{summary}} function} }
+#'   
+#' @section Data Processing Steps: \describe{ \item{Cleaning data}{If either a 
+#'   \code{baseline} or \code{cycle} dataset is provided, then all observations 
+#'   that contain missing data among the model variables are removed.  All 
+#'   non-fertile window days are removed from the \code{daily} dataset, and any 
+#'   cycles that either contain missing in the fertile window or have too many 
+#'   or too few fertile window days are also removed.}
+#'   
+#'   \item{Reducing data}{Each non-\code{NULL} dataset is reduced to the set of 
+#'   IDs and cycles that are common to every non-\code{NULL} dataset.} }
 #'   
 #' @author David A. Pritchard and Sam Berchuck, 2015
 #'   

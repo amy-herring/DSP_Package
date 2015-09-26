@@ -88,6 +88,12 @@ dspDat(formula, baseline = NULL, cycle = NULL, daily, idName, cycName,
 \item{fwLen}{A value specifying the number of days belonging to a cycle's
   fertile window.  The length of the fertile window is assumed to be same
   across all cycles.}
+
+\item{useNA}{One of either \code{"none"} or \code{"sex"}.  If \code{"none"}
+  then observations with missing data are removed from the model.  If
+  \code{"sex"} then observations with missing intercourse data are included
+  in the model conditional on no other data missing in the observation.  See
+  \emph{Data Processing Steps} for more details.}
 }
 \value{
 \code{dspDat} returns an object of \code{\link[base]{class}}
@@ -123,18 +129,18 @@ dspDat(formula, baseline = NULL, cycle = NULL, daily, idName, cycName,
   \code{\link{summary}} function} }
 }
 \description{
-\code{dspDat} is used to create an object of \code{\link[base]{class}}
-\code{"dspDat"}; the resultant object may then be used as input to the
-\code{dsp} function to sample an MCMC chain for the methodology proposed by
-Dunson and Stanford in \emph{Bayesian Inferences on Predictors of Conception
-Probabilities} (2005). The \code{dspDat} function is essentially a
-convenience function provided to (if necessary) merge multiple datasets of
-varying time-specificities, as is common for the type of fertility data for
-which the aformentioned methodology is designed.  The
-\code{\link[base]{class}} \code{"dspDat"} is equipped with a \code{summary}
-function.
+\code{dspDat} is used to create an object of \code{class} \code{"dspDat"};
+the resultant object may then be used as input to the \code{dsp} function to
+sample an MCMC chain for the methodology proposed by Dunson and Stanford in
+\emph{Bayesian Inferences on Predictors of Conception Probabilities} (2005).
+The \code{dspDat} function is essentially a convenience function provided to
+(if necessary) merge multiple datasets of varying time-specificities, as is
+common for the type of fertility data for which the aformentioned methodology
+is designed.
 }
 \details{
+The \code{class} \code{"dspDat"} is equipped with a \code{summary} function.
+
 It is natural to record fertility study data in up to three datasets
   of varying time-specificities.  First, a dataset of variables that do not
   change throughout the study which we denote as the \code{baseline} data,
@@ -159,7 +165,7 @@ It is natural to record fertility study data in up to three datasets
   types of models.  To remove this use either \code{y ~ x - 1} or \code{y ~ 0
   + x}.
 }
-\section{Data processing steps}{
+\section{Data Processing Steps}{
  \describe{ \item{Cleaning data}{If either a
   \code{baseline} or \code{cycle} dataset is provided, then all observations
   that contain missing data among the model variables are removed.  All
